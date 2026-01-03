@@ -1,2 +1,5 @@
 .DS_Store
 **/.DS_Store
+
+# GitHub Actions self-hosted runner (do NOT commit)
+actions-runner/
