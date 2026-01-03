@@ -1,0 +1,42 @@
+name: CD
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build_push_deploy:
+    # Self-hosted runner is REQUIRED if you deploy to your local minikube
+    runs-on: self-hosted
+
+    env:
+      # Ensure lowercase image path (GHCR requires lowercase)
+      IMAGE: ghcr.io/${{ toLower(github.repository) }}:sha-${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t "$IMAGE" ./spring-boot-project
+
+      - name: Scan image (Trivy)
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 "$IMAGE"
+
+      - name: Push image
+        run: docker push "$IMAGE"
+
+      - name: Deploy manifests
+        run: kubectl apply -f spring-boot-project/k8s
+
+      - name: Roll out new image
+        run: |
+          kubectl set image deployment/spring-demo spring-demo="$IMAGE"
+          kubectl rollout status deployment/spring-demo
