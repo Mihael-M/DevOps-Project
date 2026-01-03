@@ -10,11 +10,9 @@ permissions:
 
 jobs:
   build_push_deploy:
-    # Self-hosted runner is REQUIRED if you deploy to your local minikube
     runs-on: self-hosted
 
     env:
-      # Ensure lowercase image path (GHCR requires lowercase)
       IMAGE: ghcr.io/${{ toLower(github.repository) }}:sha-${{ github.sha }}
 
     steps:
