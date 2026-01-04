@@ -14,12 +14,12 @@ The goal is not the app complexity, but the **DevOps process** around it.
 2. **Branching strategy / Collaboration** — feature branches + Pull Requests  
 3. **Building Pipelines** — GitHub Actions workflows as code  
 4. **Continuous Integration (CI)** — automated tests on PR  
-5. **Security**  
+5. **Security**
    - **SAST** with Semgrep (code/config scanning)
    - **Image vulnerability scanning** with Trivy (CD gate)
 6. **Docker** — container image build via Dockerfile  
 7. **Kubernetes** — Deployment + Service + rolling updates  
-8. **Documentation** — this README explains the process & commands
+8. **Documentation** — this README explains the process & commands  
 
 ---
 
@@ -30,7 +30,7 @@ The goal is not the app complexity, but the **DevOps process** around it.
 - Run unit tests (`./mvnw test`)
 - Run **Semgrep SAST** (OWASP Top Ten ruleset)
 
-If CI fails → PR should not be merged.
+If CI fails → the PR should not be merged.
 
 ### CD (Push to `main` → build & deploy)
 - Checkout
@@ -43,12 +43,12 @@ If CI fails → PR should not be merged.
 
 ---
 
-## Diagram (Pipeline)
+## Diagram — CI/CD Pipeline
 
 ```mermaid
 flowchart LR
   A[Developer pushes to feature/*] --> B[Pull Request]
-  B --> C[CI: Tests]
+  B --> C[CI: Unit tests]
   C --> D[CI: Semgrep SAST]
   D -->|green| E[Merge to main]
   D -->|red| X[Fix issues]
@@ -58,30 +58,37 @@ flowchart LR
   G -->|green| H[Push image to GHCR]
   G -->|red| Y[Upgrade deps / fix vulnerabilities]
 
-  H --> I[Deploy to Kubernetes]
-  I --> J[Rolling update]
+  H --> I[Deploy manifests to Kubernetes]
+  I --> J[Rolling update Deployment]
+```
 
+## Diagram — Kubernetes Runtime
 
-  flowchart TB
-  subgraph K8s[Kubernetes Cluster (minikube)]
-    Dp[Deployment: spring-demo] --> Pod[Pod: spring-demo]
-    Svc[Service: spring-demo (ClusterIP)] --> Pod
+```mermaid
+flowchart TB
+  subgraph K8s
+    Dep[Deployment - spring-demo] --> Pod1[Pod]
+    Dep --> Pod2[Pod]
+    Svc[Service - spring-demo] --> Pod1
+    Svc --> Pod2
   end
 
   Dev[Developer machine] -->|kubectl port-forward| Svc
-  Pod -->|HTTP 8080| App[Spring Boot API]
+  Pod1 -->|HTTP 8080| App[Spring Boot API]
+```
 
-  Repository structure
-	•	spring-boot-project/ — Spring Boot application
-	•	Dockerfile — builds the app image
-	•	k8s/
-	•	deployment.yml — Kubernetes Deployment
-	•	service.yml — Kubernetes Service (ClusterIP)
-	•	.github/workflows/
-	•	ci.yml — CI pipeline (PR)
-	•	cd.yml — CD pipeline (push to main)
+## Repository structure
 
-    Security notes (what we enforce)
+- `spring-boot-project/` — Spring Boot application
+  - `Dockerfile` — builds the app image
+  - `k8s/`
+    - `deployment.yml` — Kubernetes Deployment
+    - `service.yml` — Kubernetes Service (ClusterIP)
+- `.github/workflows/`
+  - `ci.yml` — CI pipeline (PR)
+  - `cd.yml` — CD pipeline (push to main)
+
+## Security notes
 
 SAST (Semgrep)
 
@@ -92,53 +99,62 @@ Trivy (Image scanning)
 
 The CD pipeline runs Trivy on the built image and blocks deployment if it finds HIGH/CRITICAL vulnerabilities.
 
-⸻
 
-How to run locally (no Kubernetes)
+## How to run locally (no Kubernetes)
 
-From repo root:
-
+```bash
 cd spring-boot-project
 ./mvnw clean test
 ./mvnw clean package -DskipTests
 java -jar target/*.jar
 
-Then open:
+Open:
 	•	http://localhost:8080/api/tutorials
+```
 
-Docker (local)
+## Docker (local)
 
 From spring-boot-project/ (where the Dockerfile is):
 
+```bash
 docker build -t devops-project:local .
 docker run --rm -p 8080:8080 devops-project:local
+```
 
 Test:
-
+```bash
 curl -i http://localhost:8080/api/tutorials
+```
 
-Kubernetes (minikube)
+## Kubernetes (minikube)
 
 Start cluster:
 
+```bash
 minikube start
 kubectl get nodes
+```
 
 Apply manifests:
 
+```bash
 kubectl apply -f spring-boot-project/k8s
 kubectl rollout status deployment/spring-demo
 kubectl get pods -l app=spring-demo
 kubectl get svc spring-demo
+```
 
 Access the service locally:
 
+```bash
 kubectl port-forward svc/spring-demo 8080:8080
+```
 
-Then open:
+Open:
 	•	http://localhost:8080/api/tutorials
 
-Container registry (GHCR)
+
+## Container registry (GHCR)
 
 Images are published to GitHub Container Registry:
 
