@@ -77,17 +77,18 @@ flowchart TB
   Pod1 -->|HTTP 8080| App[Spring Boot API]
 ```
 
-Repository structure
-	•	spring-boot-project/ — Spring Boot application
-	•	Dockerfile — builds the app image
-	•	k8s/
-	•	deployment.yml — Kubernetes Deployment
-	•	service.yml — Kubernetes Service (ClusterIP)
-	•	.github/workflows/
-	•	ci.yml — CI pipeline (PR)
-	•	cd.yml — CD pipeline (push to main)
+## Repository structure
 
-Security notes
+- `spring-boot-project/` — Spring Boot application
+  - `Dockerfile` — builds the app image
+  - `k8s/`
+    - `deployment.yml` — Kubernetes Deployment
+    - `service.yml` — Kubernetes Service (ClusterIP)
+- `.github/workflows/`
+  - `ci.yml` — CI pipeline (PR)
+  - `cd.yml` — CD pipeline (push to main)
+
+## Security notes
 
 SAST (Semgrep)
 
@@ -99,10 +100,9 @@ Trivy (Image scanning)
 The CD pipeline runs Trivy on the built image and blocks deployment if it finds HIGH/CRITICAL vulnerabilities.
 
 
-How to run locally (no Kubernetes)
+## How to run locally (no Kubernetes)
 
-From repo root:
-
+```bash
 cd spring-boot-project
 ./mvnw clean test
 ./mvnw clean package -DskipTests
@@ -112,7 +112,7 @@ Open:
 	•	http://localhost:8080/api/tutorials
 
 
-Docker (local)
+## Docker (local)
 
 From spring-boot-project/ (where the Dockerfile is):
 
@@ -123,7 +123,7 @@ Test:
 
 curl -i http://localhost:8080/api/tutorials
 
-Kubernetes (minikube)
+## Kubernetes (minikube)
 
 Start cluster:
 
@@ -145,7 +145,7 @@ Open:
 	•	http://localhost:8080/api/tutorials
 
 
-Container registry (GHCR)
+## Container registry (GHCR)
 
 Images are published to GitHub Container Registry:
 
