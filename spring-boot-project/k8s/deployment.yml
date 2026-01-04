@@ -22,8 +22,8 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
-            capabilities:
-              drop: ["ALL"]
+            runAsUser: 10001
+            runAsGroup: 10001
 
           resources:
             requests:
