@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: spring-demo
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: spring-demo
@@ -18,5 +18,35 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+
           securityContext:
             allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
