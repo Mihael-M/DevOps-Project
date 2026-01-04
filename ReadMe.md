@@ -62,8 +62,9 @@ flowchart LR
   I --> J[Rolling update Deployment]
 ```
 
-Diagram — Kubernetes Runtime
+## Diagram — Kubernetes Runtime
 
+```mermaid
 flowchart TB
   subgraph K8s[Kubernetes Cluster (minikube)]
     Dep[Deployment: spring-demo] --> Pod1[Pod]
@@ -74,6 +75,7 @@ flowchart TB
 
   Dev[Developer machine] -->|kubectl port-forward| Svc
   Pod1 -->|HTTP 8080| App[Spring Boot API]
+```
 
 Repository structure
 	•	spring-boot-project/ — Spring Boot application
