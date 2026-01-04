@@ -64,6 +64,7 @@ flowchart LR
 
 ## Diagram — Kubernetes Runtime
 
+```mermaid
 flowchart TB
   subgraph K8s[Kubernetes Cluster (minikube)]
     Dep[Deployment - spring-demo] --> Pod1[Pod]
@@ -74,6 +75,7 @@ flowchart TB
 
   Dev[Developer machine] -->|kubectl port-forward| Svc
   Pod1 -->|HTTP 8080| App[Spring Boot API]
+```
 
 ## Repository structure
 
@@ -108,7 +110,7 @@ java -jar target/*.jar
 
 Open:
 	•	http://localhost:8080/api/tutorials
-
+```
 
 ## Docker (local)
 
