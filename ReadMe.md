@@ -1,112 +1,147 @@
-# Spring Boot → Docker → Kubernetes Delivery Pipeline (DevSecOps)
+# DevOps-Project — Automated Delivery Pipeline (CI/CD + Security + Kubernetes)
 
-This repository demonstrates a complete, automated software delivery process: starting from a Git repository and ending with a rolling deployment to a Kubernetes cluster. The focus is on CI/CD + security gates (DevSecOps) and “pipeline as code”.
+A small Spring Boot application used to demonstrate a **complete automated software delivery process**:
+- **CI** on Pull Requests (tests + SAST)
+- **CD** on pushes to `main` (build image + vulnerability scan + push to registry + deploy to Kubernetes)
 
----
-
-## What this project shows
-
-- **Source control workflow**: issues → feature branches → pull requests
-- **Continuous Integration (CI)**: build + unit tests + quality checks
-- **Security gates**: SAST + dependency/image vulnerability scanning
-- **Containerization**: Docker image build & push to a registry
-- **Continuous Delivery (CD)**: rolling deployment to Kubernetes (mandatory requirement)
-- **Everything as code**: CI workflow, Dockerfile, Kubernetes manifests, scripts
-- **Documentation as part of the solution**: this README + reproducible steps
+The goal is not the app complexity, but the **DevOps process** around it.
 
 ---
 
-## Tech Stack
+## What this project covers (7+ course topics)
 
-### Application
-- **Java + Spring Boot**: REST API service
-- **Maven**: build + test runner
-- **PostgreSQL**: database backend (running in Kubernetes)
-
-### Delivery / DevOps
-- **GitHub**: source control, branching, pull requests
-- **GitHub Actions**: CI/CD pipeline as code (YAML workflows)
-- **Docker**: container image build, tag, and push
-- **Kubernetes**: deployment target (Deployment/Service + rolling updates)
-- **kubectl**: deployment automation from pipeline
-
-### Security (DevSecOps)
-- **SAST (Static Application Security Testing)**: scans source code for common security issues
-- **Vulnerability scanning**: scans container image and/or dependencies for known CVEs
-- **Secrets hygiene**: no credentials committed to git; use GitHub secrets for tokens
-
-> Tools can vary (e.g., Semgrep for SAST, Trivy for image scanning). The key is the security gates exist and can block a deployment.
+1. **Source control** — GitHub repository as the single source of truth  
+2. **Branching strategy / Collaboration** — feature branches + Pull Requests  
+3. **Building Pipelines** — GitHub Actions workflows as code  
+4. **Continuous Integration (CI)** — automated tests on PR  
+5. **Security**  
+   - **SAST** with Semgrep (code/config scanning)
+   - **Image vulnerability scanning** with Trivy (CD gate)
+6. **Docker** — container image build via Dockerfile  
+7. **Kubernetes** — Deployment + Service + rolling updates  
+8. **Documentation** — this README explains the process & commands
 
 ---
 
-## Repository Structure
+## High-level flow
 
-- `src/` – Spring Boot application source code
-- `Dockerfile` – container build instructions
-- `specs/` – Kubernetes manifests (Postgres + application deployment/service)
-- `.github/workflows/` – CI/CD pipeline definition (GitHub Actions)
-- `README.md` – documentation and demo instructions
+### CI (Pull Request → quality & security gate)
+- Checkout
+- Run unit tests (`./mvnw test`)
+- Run **Semgrep SAST** (OWASP Top Ten ruleset)
 
----
+If CI fails → PR should not be merged.
 
-## Branching Strategy
-
-- `main`: always deployable; deployments to Kubernetes happen from here
-- `feature/<short-name>`: feature branches for changes
-- Pull Request is required to merge to `main`
-
-Typical flow:
-1. Create GitHub Issue
-2. Create `feature/...` branch
-3. Commit work + push
-4. Open PR → pipeline runs CI checks
-5. Merge to `main` → pipeline runs CD (deploy)
+### CD (Push to `main` → build & deploy)
+- Checkout
+- Login to **GHCR**
+- Build Docker image
+- Run **Trivy** scan (**fails** on HIGH/CRITICAL)
+- Push image to GHCR
+- Apply Kubernetes manifests
+- Rolling update on the deployment
 
 ---
 
-## CI/CD Pipeline Overview (as code)
+## Diagram (Pipeline)
 
-The pipeline starts at the Git repository and enforces quality and security gates before deployment.
+```mermaid
+flowchart LR
+  A[Developer pushes to feature/*] --> B[Pull Request]
+  B --> C[CI: Tests]
+  C --> D[CI: Semgrep SAST]
+  D -->|green| E[Merge to main]
+  D -->|red| X[Fix issues]
 
-### CI (on pull request)
-1. **Checkout code**
-2. **Build & Unit Tests** (Maven)
-3. **Lint / Style Check** (e.g., Checkstyle/Spotless – optional but recommended)
-4. **SAST** (static security scan)
-5. **Fail fast**: if tests or security checks fail, the PR cannot be merged
+  E --> F[CD: Docker build]
+  F --> G[CD: Trivy scan]
+  G -->|green| H[Push image to GHCR]
+  G -->|red| Y[Upgrade deps / fix vulnerabilities]
 
-### CD (on merge to `main`)
-1. **Build application**
-2. **Build Docker image**
-3. **Scan image for vulnerabilities** (CVE scan)
-4. **Push image to registry**
-5. **Deploy to Kubernetes** (`kubectl apply -f specs/`)
-6. **Rolling update** of the application Deployment
+  H --> I[Deploy to Kubernetes]
+  I --> J[Rolling update]
 
----
 
-## Deep Dive: SAST (Static Application Security Testing)
+  flowchart TB
+  subgraph K8s[Kubernetes Cluster (minikube)]
+    Dp[Deployment: spring-demo] --> Pod[Pod: spring-demo]
+    Svc[Service: spring-demo (ClusterIP)] --> Pod
+  end
 
-SAST scans the source code without running it and can detect:
-- insecure patterns (e.g., command injection risks)
-- hardcoded secrets (basic cases)
-- unsafe deserialization patterns
-- missing security best practices in common frameworks
+  Dev[Developer machine] -->|kubectl port-forward| Svc
+  Pod -->|HTTP 8080| App[Spring Boot API]
 
-In this project:
-- SAST runs on every Pull Request.
-- If a high severity rule matches, the pipeline fails and blocks merge/deploy.
+  Repository structure
+	•	spring-boot-project/ — Spring Boot application
+	•	Dockerfile — builds the app image
+	•	k8s/
+	•	deployment.yml — Kubernetes Deployment
+	•	service.yml — Kubernetes Service (ClusterIP)
+	•	.github/workflows/
+	•	ci.yml — CI pipeline (PR)
+	•	cd.yml — CD pipeline (push to main)
 
-During the demo you can show:
-- a deliberately introduced insecure pattern
-- the pipeline failing on PR
-- fixing the issue
-- pipeline passing and allowing deployment
+    Security notes (what we enforce)
 
----
+SAST (Semgrep)
 
-## Running Locally (optional)
+Semgrep scans source and configuration (including Kubernetes YAML).
+Example: it flagged missing container securityContext.allowPrivilegeEscalation: false, which was fixed in the deployment manifest.
 
-### Build + tests
-```bash
-./mvnw test
+Trivy (Image scanning)
+
+The CD pipeline runs Trivy on the built image and blocks deployment if it finds HIGH/CRITICAL vulnerabilities.
+
+⸻
+
+How to run locally (no Kubernetes)
+
+From repo root:
+
+cd spring-boot-project
+./mvnw clean test
+./mvnw clean package -DskipTests
+java -jar target/*.jar
+
+Then open:
+	•	http://localhost:8080/api/tutorials
+
+Docker (local)
+
+From spring-boot-project/ (where the Dockerfile is):
+
+docker build -t devops-project:local .
+docker run --rm -p 8080:8080 devops-project:local
+
+Test:
+
+curl -i http://localhost:8080/api/tutorials
+
+Kubernetes (minikube)
+
+Start cluster:
+
+minikube start
+kubectl get nodes
+
+Apply manifests:
+
+kubectl apply -f spring-boot-project/k8s
+kubectl rollout status deployment/spring-demo
+kubectl get pods -l app=spring-demo
+kubectl get svc spring-demo
+
+Access the service locally:
+
+kubectl port-forward svc/spring-demo 8080:8080
+
+Then open:
+	•	http://localhost:8080/api/tutorials
+
+Container registry (GHCR)
+
+Images are published to GitHub Container Registry:
+
+ghcr.io/mihael-m/devops-project:sha-<commit_sha>
+
+The CD pipeline tags each image with the commit SHA for traceability.
