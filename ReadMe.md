@@ -60,7 +60,7 @@ flowchart LR
 
   H --> I[Deploy manifests to Kubernetes]
   I --> J[Rolling update Deployment]
-...
+```
 
 Diagram — Kubernetes Runtime
 
