@@ -64,18 +64,16 @@ flowchart LR
 
 ## Diagram — Kubernetes Runtime
 
-```mermaid
 flowchart TB
   subgraph K8s[Kubernetes Cluster (minikube)]
-    Dep[Deployment: spring-demo] --> Pod1[Pod]
+    Dep[Deployment - spring-demo] --> Pod1[Pod]
     Dep --> Pod2[Pod]
-    Svc[Service: spring-demo (ClusterIP)] --> Pod1
+    Svc[Service - spring-demo (ClusterIP)] --> Pod1
     Svc --> Pod2
   end
 
   Dev[Developer machine] -->|kubectl port-forward| Svc
   Pod1 -->|HTTP 8080| App[Spring Boot API]
-```
 
 ## Repository structure
 
