@@ -66,10 +66,10 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  subgraph K8s[Kubernetes Cluster (minikube)]
+  subgraph K8s
     Dep[Deployment - spring-demo] --> Pod1[Pod]
     Dep --> Pod2[Pod]
-    Svc[Service - spring-demo (ClusterIP)] --> Pod1
+    Svc[Service - spring-demo] --> Pod1
     Svc --> Pod2
   end
 
@@ -116,30 +116,39 @@ Open:
 
 From spring-boot-project/ (where the Dockerfile is):
 
+```bash
 docker build -t devops-project:local .
 docker run --rm -p 8080:8080 devops-project:local
+```
 
 Test:
-
+```bash
 curl -i http://localhost:8080/api/tutorials
+```
 
 ## Kubernetes (minikube)
 
 Start cluster:
 
+```bash
 minikube start
 kubectl get nodes
+```
 
 Apply manifests:
 
+```bash
 kubectl apply -f spring-boot-project/k8s
 kubectl rollout status deployment/spring-demo
 kubectl get pods -l app=spring-demo
 kubectl get svc spring-demo
+```
 
 Access the service locally:
 
+```bash
 kubectl port-forward svc/spring-demo 8080:8080
+```
 
 Open:
 	•	http://localhost:8080/api/tutorials
