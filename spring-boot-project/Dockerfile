@@ -8,6 +8,16 @@ RUN mvn -q -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get autoremove -y \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 10001 appuser
+
+COPY --from=build /app/target/*.jar /app/app.jar
+
 RUN useradd -m -u 10001 appuser
 
 COPY --from=build /app/target/*.jar /app/app.jar
