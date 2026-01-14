@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 @Table(name = "tutorials")
 public class Tutorial {
     //test project
+
+    
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private long id;
