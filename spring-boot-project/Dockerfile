@@ -17,10 +17,6 @@ RUN apt-get update \
 RUN useradd -m -u 10001 appuser
 
 COPY --from=build /app/target/*.jar /app/app.jar
-
-RUN useradd -m -u 10001 appuser
-
-COPY --from=build /app/target/*.jar /app/app.jar
 RUN chown -R appuser:appuser /app
 
 USER appuser
